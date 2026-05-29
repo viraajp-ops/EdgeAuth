@@ -1,0 +1,2 @@
+Replace with lightweight texture liveness INT8 TFLite model.
+Keep total binary model bundle under 20 MB.

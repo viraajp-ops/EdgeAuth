@@ -1,0 +1,12 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@faceguard/*": ["src/faceguard/*"]
+    }
+  },
+  "include": ["src", "scripts", "__tests__", "App.tsx"]
+}

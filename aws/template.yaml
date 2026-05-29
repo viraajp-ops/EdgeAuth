@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: FaceGuard sync API for Datalake 3.0.
+
+Resources:
+  FaceGuardRecordsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: createdAt
+          KeyType: RANGE
+
+  FaceGuardSyncFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs20.x
+      Handler: sync.handler
+      CodeUri: ./lambda
+      Timeout: 10
+      MemorySize: 256
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FaceGuardRecordsTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref FaceGuardRecordsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /faceguard/sync
+            Method: POST
+
+Outputs:
+  FaceGuardSyncApi:
+    Description: API Gateway endpoint URL.
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/faceguard/sync'

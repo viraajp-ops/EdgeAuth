@@ -1,0 +1,2 @@
+Replace with Apache-2.0 BlazeFace INT8 TFLite model.
+Keep total binary model bundle under 20 MB.

@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "FaceGuard Datalake",
+    "slug": "faceguard-datalake",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "faceguard",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "assets/**/*",
+      "models/**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.datalake.faceguard",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FaceGuard uses the camera for offline facial authentication and liveness checks."
+      },
+      "deploymentTarget": "12.0"
+    },
+    "android": {
+      "package": "com.datalake.faceguard",
+      "minSdkVersion": 26,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET"
+      ]
+    },
+    "plugins": [
+      "react-native-vision-camera",
+      "expo-secure-store"
+    ],
+    "extra": {
+      "faceguard": {
+        "targetModelBundleMb": 20,
+        "authTargetMs": 1000,
+        "minAccuracy": 0.95
+      }
+    }
+  }
+}

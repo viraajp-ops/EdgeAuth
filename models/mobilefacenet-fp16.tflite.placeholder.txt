@@ -1,0 +1,2 @@
+Replace with MIT MobileFaceNet FP16 TFLite model.
+Keep total binary model bundle under 20 MB.
