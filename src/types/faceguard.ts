@@ -43,6 +43,7 @@ export type FrameSample = {
   timestamp: number;
   luminance: number;
   textureScore: number;
+  photoPath?: string;
   rgbData?: Uint8Array;
   eyeAspectRatio?: number;
   headYawDegrees?: number;

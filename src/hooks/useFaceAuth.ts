@@ -8,7 +8,7 @@ import { useFaceGuardContext } from '../faceguard/FaceGuardProvider';
 import { AuthStatus, FaceAuthFailure, FaceAuthResult } from '../types/faceguard';
 
 export function useFaceAuth() {
-  const { queue, ready } = useFaceGuardContext();
+  const { queue, ready, initError } = useFaceGuardContext();
   const [status, setStatus] = useState<AuthStatus>('idle');
   const [lastResult, setLastResult] = useState<FaceAuthResult | undefined>();
   const [lastError, setLastError] = useState<FaceAuthFailure | undefined>();
@@ -19,13 +19,18 @@ export function useFaceAuth() {
   }, []);
 
   useEffect(() => {
-    refreshEnrollment();
-  }, [refreshEnrollment]);
+    if (ready) {
+      refreshEnrollment();
+    }
+  }, [ready, refreshEnrollment]);
 
   const enroll = useCallback(
     async (photoPath: string) => {
       if (!ready) {
         setStatus('initializing');
+        if (initError) {
+          setLastError({ code: 'MODEL_UNAVAILABLE', reason: initError });
+        }
         return false;
       }
 
@@ -43,35 +48,42 @@ export function useFaceAuth() {
         return false;
       }
     },
-    [ready, refreshEnrollment]
+    [initError, ready, refreshEnrollment]
   );
 
-  const authenticate = useCallback(async (photoPaths: string[]) => {
-    if (!ready) {
-      setStatus('initializing');
-      return;
-    }
+  const authenticate = useCallback(
+    async (photoPaths: string[]) => {
+      if (!ready) {
+        setStatus('initializing');
+        if (initError) {
+          setLastError({ code: 'MODEL_UNAVAILABLE', reason: initError });
+        }
+        return;
+      }
 
-    setStatus('checking-liveness');
-    setLastError(undefined);
+      setStatus('checking-liveness');
+      setLastError(undefined);
 
-    try {
-      const result = await authenticateLocalFace(photoPaths, 'offline-camera-device');
-      await queue.enqueue(result);
-      setLastResult(result);
-      setStatus('success');
-      return result;
-    } catch (error) {
-      const failure = error as FaceAuthFailure;
-      setLastError(failure);
-      setStatus('failed');
-      return undefined;
-    }
-  }, [queue, ready]);
+      try {
+        const result = await authenticateLocalFace(photoPaths, 'offline-camera-device');
+        await queue.enqueue(result);
+        setLastResult(result);
+        setStatus('success');
+        return result;
+      } catch (error) {
+        const failure = error as FaceAuthFailure;
+        setLastError(failure);
+        setStatus('failed');
+        return undefined;
+      }
+    },
+    [initError, queue, ready]
+  );
 
   return {
     status,
     ready,
+    initError,
     enrolled,
     lastResult,
     lastError,

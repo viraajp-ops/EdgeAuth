@@ -6,6 +6,11 @@
     "orientation": "portrait",
     "scheme": "faceguard",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#101820"
+    },
     "assetBundlePatterns": [
       "assets/**/*",
       "models/**/*"
@@ -14,21 +19,34 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.datalake.faceguard",
       "infoPlist": {
-        "NSCameraUsageDescription": "FaceGuard uses the camera for offline facial authentication and liveness checks."
-      },
-      "deploymentTarget": "12.0"
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
+      }
     },
     "android": {
       "package": "com.datalake.faceguard",
-      "minSdkVersion": 26,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.INTERNET"
+        "android.permission.INTERNET",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
-      "react-native-vision-camera",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Allow $(PRODUCT_NAME) to access your camera",
+          "enableMicrophonePermission": true,
+          "microphonePermissionText": "Allow $(PRODUCT_NAME) to access your microphone"
+        }
+      ],
+      [
+        "react-native-fast-tflite",
+        {
+          "enableCoreMLDelegate": true
+        }
+      ],
       "expo-secure-store"
     ],
     "extra": {
@@ -36,6 +54,9 @@
         "targetModelBundleMb": 20,
         "authTargetMs": 1000,
         "minAccuracy": 0.95
+      },
+      "eas": {
+        "projectId": "19d979b1-1c80-43e4-9d86-f2a817cb2d6c"
       }
     }
   }

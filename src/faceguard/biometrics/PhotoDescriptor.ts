@@ -8,11 +8,19 @@ export type PhotoDescriptor = {
 };
 
 const HISTOGRAM_BINS = 96;
+const MAX_READ_BYTES = 512_000;
 
 export async function createPhotoDescriptor(photoPath: string): Promise<PhotoDescriptor> {
   const uri = photoPath.startsWith('file://') ? photoPath : `file://${photoPath}`;
+  const info = await FileSystem.getInfoAsync(uri);
+  if (!info.exists) {
+    throw new Error('Captured photo is not available on disk.');
+  }
+
   const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64
+    encoding: FileSystem.EncodingType.Base64,
+    length: MAX_READ_BYTES,
+    position: 0
   });
 
   const histogram = Array.from({ length: HISTOGRAM_BINS }, () => 0);

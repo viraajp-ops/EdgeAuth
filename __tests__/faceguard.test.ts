@@ -1,15 +1,17 @@
 import { FaceGuardEngine } from '../src/faceguard/FaceGuardEngine';
 import { createDemoFrameSequence } from '../src/faceguard/frameSamples';
 import { LivenessEngine } from '../src/faceguard/liveness/LivenessEngine';
+import { SimulatedTfliteAdapter } from '../src/faceguard/model/ModelAdapter';
 
 describe('FaceGuard offline pipeline', () => {
   it('authenticates a valid offline liveness sequence', async () => {
-    const engine = new FaceGuardEngine();
+    const engine = new FaceGuardEngine(new SimulatedTfliteAdapter());
     await engine.initialize();
 
     const result = await engine.authenticate({
       frames: createDemoFrameSequence(),
-      deviceId: 'test-device'
+      deviceId: 'test-device',
+      useLocalEnrollment: false
     });
 
     expect(result.matched).toBe(true);

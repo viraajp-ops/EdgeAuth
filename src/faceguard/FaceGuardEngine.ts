@@ -1,7 +1,9 @@
 import { v4 as uuid } from 'uuid';
+import { getLocalEnrollment, saveLocalEnrollment } from './biometrics/LocalEnrollmentStore';
 import { FACEGUARD_CONFIG } from './config';
 import { LivenessEngine } from './liveness/LivenessEngine';
 import { ModelAdapter, SimulatedTfliteAdapter } from './model/ModelAdapter';
+import { TfliteModelAdapter } from './model/TfliteModelAdapter';
 import { cosineSimilarity } from './model/vector';
 import { SAMPLE_IDENTITIES } from './sampleIdentities';
 import {
@@ -18,20 +20,51 @@ export type AuthenticateOptions = {
   challenges?: LivenessChallenge[];
   threshold?: number;
   deviceId: string;
+  useLocalEnrollment?: boolean;
 };
+
+const LOCAL_MATCH_THRESHOLD = 0.82;
+
+export function createDefaultModelAdapter(): ModelAdapter {
+  return new TfliteModelAdapter();
+}
 
 export class FaceGuardEngine {
   private readonly liveness = new LivenessEngine();
   private initialized = false;
 
   constructor(
-    private readonly modelAdapter: ModelAdapter = new SimulatedTfliteAdapter(),
+    private readonly modelAdapter: ModelAdapter = createDefaultModelAdapter(),
     private readonly identities: EnrolledIdentity[] = SAMPLE_IDENTITIES
   ) {}
 
   async initialize(): Promise<void> {
     await this.modelAdapter.initialize();
     this.initialized = true;
+  }
+
+  async enrollFromFrames(frames: FrameSample[], userId = 'DL-FIELD-LOCAL', name = 'Local Field User'): Promise<void> {
+    if (!this.initialized) {
+      throw this.failure('MODEL_UNAVAILABLE', 'FaceGuard models are not initialized.');
+    }
+
+    const prepared = await this.prepareFrames(frames);
+    const faceFrame = prepared.find(frame => frame.face);
+    if (!faceFrame?.face) {
+      throw this.failure('NO_FACE', 'No usable face was detected. Center your face and try again.');
+    }
+
+    if (faceFrame.luminance < 0.18) {
+      throw this.failure('LOW_LIGHT', 'Lighting is too low for enrollment.');
+    }
+
+    const embedding = await this.modelAdapter.createEmbedding(faceFrame, faceFrame.face);
+    await saveLocalEnrollment({
+      userId,
+      name,
+      embedding,
+      enrolledAt: new Date().toISOString()
+    });
   }
 
   async authenticate(options: AuthenticateOptions): Promise<FaceAuthResult> {
@@ -58,7 +91,13 @@ export class FaceGuardEngine {
     }
 
     const embedding = await this.modelAdapter.createEmbedding(faceFrame, faceFrame.face);
-    const match = this.match(embedding, options.threshold ?? FACEGUARD_CONFIG.authThreshold);
+    const threshold = options.threshold ?? FACEGUARD_CONFIG.authThreshold;
+    const useLocal = options.useLocalEnrollment ?? true;
+
+    const match = useLocal
+      ? await this.matchLocal(embedding, threshold)
+      : this.matchSampleIdentities(embedding, threshold);
+
     if (!match.matched || !match.userId) {
       throw this.failure('MATCH_FAILED', 'Face did not match an enrolled field personnel profile.');
     }
@@ -86,12 +125,28 @@ export class FaceGuardEngine {
       frames.map(async frame => ({
         ...frame,
         face: frame.face ?? (await this.modelAdapter.detectFace(frame)),
-        textureScore: await this.modelAdapter.estimateTextureLiveness(frame)
+        textureScore: frame.textureScore || (await this.modelAdapter.estimateTextureLiveness(frame))
       }))
     );
   }
 
-  private match(embedding: number[], threshold: number): FaceMatchResult {
+  private async matchLocal(embedding: number[], threshold: number): Promise<FaceMatchResult> {
+    const enrollment = await getLocalEnrollment();
+    if (!enrollment) {
+      return { matched: false, score: 0, threshold };
+    }
+
+    const score = Number(cosineSimilarity(embedding, enrollment.embedding).toFixed(4));
+    const effectiveThreshold = Math.max(threshold, LOCAL_MATCH_THRESHOLD);
+    return {
+      matched: score >= effectiveThreshold,
+      userId: enrollment.userId,
+      score,
+      threshold: effectiveThreshold
+    };
+  }
+
+  private matchSampleIdentities(embedding: number[], threshold: number): FaceMatchResult {
     const best = this.identities
       .map(identity => ({
         identity,
@@ -111,3 +166,6 @@ export class FaceGuardEngine {
     return { code, reason };
   }
 }
+
+/** @deprecated Use createDefaultModelAdapter() for new integrations. */
+export { SimulatedTfliteAdapter };
