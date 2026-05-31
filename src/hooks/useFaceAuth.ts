@@ -1,17 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FACEGUARD_CONFIG } from '../faceguard/config';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FACEGUARD_CONFIG } from "../faceguard/config";
 import {
   authenticateLocalFace,
   enrollLocalFace,
-  hasLocalEnrollment
-} from '../faceguard/biometrics/OfflineBiometricAuthenticator';
-import { MlFaceAuthService } from '../faceguard/model/MlFaceAuthService';
-import { AuthStatus, FaceAuthFailure, FaceAuthResult } from '../types/faceguard';
-import { useFaceGuardContext } from '../faceguard/FaceGuardProvider';
+  hasLocalEnrollment,
+} from "../faceguard/biometrics/OfflineBiometricAuthenticator";
+import { MlFaceAuthService } from "../faceguard/model/MlFaceAuthService";
+import {
+  AuthStatus,
+  FaceAuthFailure,
+  FaceAuthResult,
+} from "../types/faceguard";
+import { useFaceGuardContext } from "../faceguard/FaceGuardProvider";
 
 export function useFaceAuth() {
   const { queue, ready } = useFaceGuardContext();
-  const [status, setStatus] = useState<AuthStatus>('initializing');
+  const [status, setStatus] = useState<AuthStatus>("initializing");
   const [lastResult, setLastResult] = useState<FaceAuthResult | undefined>();
   const [lastError, setLastError] = useState<FaceAuthFailure | undefined>();
   const [enrolled, setEnrolled] = useState(false);
@@ -20,11 +24,11 @@ export function useFaceAuth() {
   const ml = useMemo(
     () =>
       new MlFaceAuthService({
-        faceDetector: require('../../models/blazeface-int8.tflite'),
-        faceRecognizer: require('../../models/mobilefacenet-fp16.tflite'),
-        antiSpoof: require('../../models/antispoof-texture-int8.tflite')
+        faceDetector: require("../../models/blazeface-int8.tflite"),
+        faceRecognizer: require("../../models/mobilefacenet-fp16.tflite"),
+        antiSpoof: require("../../models/antispoof-texture-int8.tflite"),
       }),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -34,13 +38,16 @@ export function useFaceAuth() {
         await ml.initialize();
         if (mounted) {
           setMlReady(true);
-          setStatus('idle');
+          setStatus("idle");
         }
       } catch (error) {
-        console.warn('ML models unavailable, keeping offline fallback active.', error);
+        console.warn(
+          "ML models unavailable, keeping offline fallback active.",
+          error,
+        );
         if (mounted) {
           setMlReady(false);
-          setStatus('idle');
+          setStatus("idle");
         }
       }
     }
@@ -61,11 +68,11 @@ export function useFaceAuth() {
   const enroll = useCallback(
     async (photoPaths: string[] | string) => {
       if (!ready) {
-        setStatus('initializing');
+        setStatus("initializing");
         return false;
       }
 
-      setStatus('matching-face');
+      setStatus("matching-face");
       setLastError(undefined);
 
       try {
@@ -75,43 +82,43 @@ export function useFaceAuth() {
           await enrollLocalFace(photoPaths);
         }
         await refreshEnrollment();
-        setStatus('success');
+        setStatus("success");
         return true;
       } catch (error) {
         setLastError(error as FaceAuthFailure);
-        setStatus('failed');
+        setStatus("failed");
         return false;
       }
     },
-    [ml, ready, refreshEnrollment]
+    [ml, ready, refreshEnrollment],
   );
 
   const authenticate = useCallback(
     async (photoPaths: string[]) => {
       if (!ready) {
-        setStatus('initializing');
+        setStatus("initializing");
         return;
       }
 
-      setStatus('checking-liveness');
+      setStatus("checking-liveness");
       setLastError(undefined);
 
       try {
         const result = mlReady
-          ? await ml.authenticate(photoPaths, 'offline-camera-device')
-          : await authenticateLocalFace(photoPaths, 'offline-camera-device');
+          ? await ml.authenticate(photoPaths, "offline-camera-device")
+          : await authenticateLocalFace(photoPaths, "offline-camera-device");
         await queue.enqueue(result);
         setLastResult(result);
-        setStatus('success');
+        setStatus("success");
         return result;
       } catch (error) {
         const failure = error as FaceAuthFailure;
         setLastError(failure);
-        setStatus('failed');
+        setStatus("failed");
         return undefined;
       }
     },
-    [ml, queue, ready]
+    [ml, queue, ready],
   );
 
   return {
@@ -121,6 +128,6 @@ export function useFaceAuth() {
     lastResult,
     lastError,
     enroll,
-    authenticate
+    authenticate,
   };
 }
