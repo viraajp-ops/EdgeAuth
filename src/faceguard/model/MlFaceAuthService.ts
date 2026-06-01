@@ -3,7 +3,7 @@ import { FaceAuthFailure, FaceAuthResult } from '../../types/faceguard';
 import { buildFrameSampleFromPhoto } from './PhotoTensorBuilder';
 import { createPhotoDescriptor } from '../biometrics/PhotoDescriptor';
 import { getLocalEnrollment, saveLocalEnrollment } from '../biometrics/LocalEnrollmentStore';
-import { TfliteModelAdapter } from './TfliteModelAdapter';
+import { createDefaultModelAdapter } from '../FaceGuardEngine';
 
 type MlFaceAuthOptions = {
   faceDetector: number;
@@ -15,7 +15,7 @@ const MATCH_THRESHOLD = 0.72;
 const LIVENESS_THRESHOLD = 0.45;
 
 export class MlFaceAuthService {
-  private readonly adapter = new TfliteModelAdapter();
+  private readonly adapter = createDefaultModelAdapter();
   private initialized = false;
 
   constructor(_options: MlFaceAuthOptions) {}

@@ -34,6 +34,9 @@ export class TfliteModelAdapter implements ModelAdapter {
 
   async initialize(): Promise<void> {
     try {
+      if (Platform.OS === 'android') {
+        throw new Error('TFLite is disabled on Android.');
+      }
       // Load lazily so Nitro failures fall back cleanly instead of crashing on import.
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const fastTflite = require('react-native-fast-tflite');

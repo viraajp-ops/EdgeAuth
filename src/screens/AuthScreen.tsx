@@ -16,6 +16,11 @@ export function AuthScreen({ navigation }: Props) {
   const [challengeText, setChallengeText] = useState('Enroll your face to start offline authentication');
   const [cameraError, setCameraError] = useState<string | undefined>();
   const [requestingPermission, setRequestingPermission] = useState(false);
+  const [cameraInitialized, setCameraInitialized] = useState(false);
+
+  useEffect(() => {
+    setCameraInitialized(false);
+  }, [device]);
 
   useEffect(() => {
     if (lastResult) {
@@ -52,46 +57,67 @@ export function AuthScreen({ navigation }: Props) {
   }, [hasPermission, requestPermission]);
 
   const busy = status === 'detecting-face' || status === 'checking-liveness' || status === 'matching-face';
-  const cameraReady = Boolean(device && hasPermission && !cameraError);
+  const cameraReady = Boolean(device && hasPermission && !cameraError && cameraInitialized && cameraRef.current);
 
-  const capturePhoto = async () => {
-    if (!cameraRef.current) {
-      throw new Error('Camera is not ready.');
+  const capturePhoto = async (retries = 5, delayMs = 300): Promise<string> => {
+    for (let attempt = 1; attempt <= retries; attempt += 1) {
+      try {
+        if (!cameraRef.current) {
+          throw new Error('Camera is not ready.');
+        }
+        const photo = await cameraRef.current.takePhoto({
+          flash: 'off',
+          enableShutterSound: false
+        });
+        return photo.path;
+      } catch (error) {
+        if (attempt === retries) {
+          throw error;
+        }
+        console.warn(`Camera capture attempt ${attempt} failed, retrying in ${delayMs}ms...`, error);
+        await wait(delayMs);
+      }
     }
-    const photo = await cameraRef.current.takePhoto({
-      flash: 'off',
-      enableShutterSound: false
-    });
-    return photo.path;
+    throw new Error('Camera is not ready.');
   };
 
   const enrollCurrentFace = async () => {
     const prompts = ['Look straight at the camera', 'Keep your face centered', 'Hold still for a moment'];
     const captures: string[] = [];
 
-    for (const prompt of prompts) {
-      setChallengeText(prompt);
-      await wait(650);
-      captures.push(await capturePhoto());
-    }
+    try {
+      for (const prompt of prompts) {
+        setChallengeText(prompt);
+        await wait(650);
+        captures.push(await capturePhoto());
+      }
 
-    setChallengeText('Saving offline template');
-    const ok = await enroll(captures);
-    setChallengeText(ok ? 'Enrollment saved on this device' : 'Enrollment failed. Try again.');
+      setChallengeText('Saving offline template');
+      const ok = await enroll(captures);
+      setChallengeText(ok ? 'Enrollment saved on this device' : 'Enrollment failed. Try again.');
+    } catch (error) {
+      console.warn('Enrollment failed:', error);
+      setChallengeText('Enrollment failed: Camera not ready');
+    }
   };
 
   const verifyCurrentFace = async () => {
     const prompts = ['Blink once', 'Turn your head slightly', 'Smile naturally'];
     const captures: string[] = [];
 
-    for (const prompt of prompts) {
-      setChallengeText(prompt);
-      await wait(750);
-      captures.push(await capturePhoto());
-    }
+    try {
+      for (const prompt of prompts) {
+        setChallengeText(prompt);
+        await wait(750);
+        captures.push(await capturePhoto());
+      }
 
-    setChallengeText('Matching offline biometric template');
-    await authenticate(captures);
+      setChallengeText('Matching offline biometric template');
+      await authenticate(captures);
+    } catch (error) {
+      console.warn('Verification failed:', error);
+      setChallengeText('Verification failed: Camera not ready');
+    }
   };
 
   return (
@@ -106,8 +132,14 @@ export function AuthScreen({ navigation }: Props) {
             photo
             video={false}
             audio={false}
-            onInitialized={() => setCameraError(undefined)}
-            onError={error => setCameraError(error.message)}
+            onInitialized={() => {
+              setCameraError(undefined);
+              setCameraInitialized(true);
+            }}
+            onError={error => {
+              setCameraError(error.message);
+              setCameraInitialized(false);
+            }}
           />
         ) : (
           <View style={styles.cameraFallback}>
