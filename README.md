@@ -45,3 +45,32 @@ The `DashboardScreen` manages an offline SQLite queue (powered by WatermelonDB /
 
 - **Cosine Similarity:** The MobileFaceNet adapter generates a 192-dimensional floating-point vector mapping of the face. We calculate the mathematical Cosine Similarity between the enrolled tensor and the challenge tensor.
 - By tuning our threshold dynamically and utilizing native luminance balancing, the system reliably identifies diverse facial structures even in varying outdoor conditions.
+
+---
+
+## Developer Setup / Running Locally
+
+If you are cloning this repository on a fresh machine, you must compile the native development client due to our custom Edge AI and Camera native modules.
+
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Rebuild the Native Client**
+   Because this app uses `react-native-vision-camera`, `react-native-fast-tflite`, and `expo-image-manipulator`, you **cannot** use the standard Expo Go app. You must build the native custom client:
+   
+   **For Android:**
+   ```bash
+   npx expo run:android
+   ```
+   **For iOS (Mac required):**
+   ```bash
+   npx expo run:ios
+   ```
+
+3. **Start the Metro Bundler**
+   After the native app is installed on your emulator/device, you can start the JavaScript bundler:
+   ```bash
+   npx expo start -c
+   ```
