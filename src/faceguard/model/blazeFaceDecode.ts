@@ -145,11 +145,18 @@ function toFloat(value: number | bigint): number {
   return Number(value);
 }
 
-function asNumericArray(values: NumericArray | ArrayBuffer): NumericArray {
+function asNumericArray(values: NumericArray | ArrayBuffer | Uint8Array): NumericArray {
   if (values instanceof ArrayBuffer) {
-    const floats = new Float32Array(values);
-    return floats as unknown as NumericArray;
+    return new Float32Array(values) as unknown as NumericArray;
+  }
+  
+  if ((values as any).buffer instanceof ArrayBuffer) {
+    // fast-tflite v1 returns raw memory as Uint8Array
+    const buffer = (values as any).buffer;
+    const offset = (values as any).byteOffset || 0;
+    const length = (values as any).byteLength || 0;
+    return new Float32Array(buffer, offset, length / 4) as unknown as NumericArray;
   }
 
-  return values;
+  return values as NumericArray;
 }

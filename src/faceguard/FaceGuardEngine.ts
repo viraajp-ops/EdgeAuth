@@ -28,11 +28,6 @@ export type AuthenticateOptions = {
 const LOCAL_MATCH_THRESHOLD = 0.82;
 
 export function createDefaultModelAdapter(): ModelAdapter {
-  // Native TFLite crashes on many Android devices during model.run(); use the
-  // photo pipeline there. iOS uses BlazeFace + MobileFaceNet when available.
-  if (Platform.OS === 'android') {
-    return new PhotoBasedModelAdapter();
-  }
   return new TfliteModelAdapter();
 }
 
@@ -93,8 +88,10 @@ export class FaceGuardEngine {
 
     const challenges = options.challenges ?? FACEGUARD_CONFIG.defaultChallenges;
     const livenessResult = this.liveness.evaluate(frames, challenges);
+
+    // ANTI-SPOOFING VERIFICATION
     if (!livenessResult.passed) {
-      throw this.failure('LIVENESS_FAILED', livenessResult.reason ?? 'Liveness failed.');
+      throw this.failure('LIVENESS_FAILED', livenessResult.reason || 'Liveness check failed');
     }
 
     const embedding = await this.modelAdapter.createEmbedding(faceFrame, faceFrame.face);

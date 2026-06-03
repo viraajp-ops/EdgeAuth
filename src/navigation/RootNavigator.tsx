@@ -1,11 +1,15 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthScreen } from '../screens/AuthScreen';
+import { EnrollScreen } from '../screens/EnrollScreen';
+import { VerifyScreen } from '../screens/VerifyScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
+import LogsScreen from '../screens/LogsScreen';
 
 export type RootStackParamList = {
-  Auth: undefined;
+  Enroll: undefined;
+  Verify: undefined;
   Dashboard: undefined;
+  Logs: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -14,14 +18,15 @@ export function RootNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#101820' },
-        headerTintColor: '#ffffff',
-        headerTitleStyle: { fontWeight: '700' },
-        contentStyle: { backgroundColor: '#f4f7f8' }
+        headerShown: false,
+        contentStyle: { backgroundColor: '#ffffff' }
       }}
+      initialRouteName="Verify"
     >
-      <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'FaceGuard' }} />
+      <Stack.Screen name="Enroll" component={EnrollScreen} options={{ title: 'Enroll Face' }} />
+      <Stack.Screen name="Verify" component={VerifyScreen} options={{ title: 'Verify Face' }} />
       <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Datalake 3.0' }} />
+      <Stack.Screen name="Logs" component={LogsScreen} options={{ title: 'Offline Logs' }} />
     </Stack.Navigator>
   );
 }

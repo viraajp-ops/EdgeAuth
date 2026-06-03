@@ -154,7 +154,7 @@ export function estimateTextureScore(image: RgbaImage): number {
     }
   }
   const normalized = transitions / (image.width * image.height * 255 * 2);
-  return Math.max(0.35, Math.min(0.98, normalized * 6 + 0.35));
+  return Math.max(0.35, Math.min(0.98, normalized * 40 + 0.35));
 }
 
 function normalizeMobileFaceNetFace(image: RgbaImage): Float32Array {
