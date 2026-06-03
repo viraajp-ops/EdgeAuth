@@ -18,17 +18,16 @@ export function useFaceAuth() {
   const [status, setStatus] = useState<AuthStatus>("initializing");
   const [lastResult, setLastResult] = useState<FaceAuthResult | undefined>();
   const [lastError, setLastError] = useState<FaceAuthFailure | undefined>();
-  const [enrolled, setEnrolled] = useState(false);
+  const [enrolled, setEnrolled] = useState<boolean | null>(null);
   const [mlReady, setMlReady] = useState(false);
 
-  const ml = useMemo(
+  const [ml] = useState(
     () =>
       new MlFaceAuthService({
         faceDetector: require("../../models/blazeface-int8.tflite"),
         faceRecognizer: require("../../models/mobilefacenet-fp16.tflite"),
         antiSpoof: require("../../models/antispoof-texture-int8.tflite"),
       }),
-    [],
   );
 
   useEffect(() => {
@@ -58,8 +57,8 @@ export function useFaceAuth() {
   }, [ml]);
 
   const refreshEnrollment = useCallback(async () => {
-    setEnrolled(mlReady ? true : await hasLocalEnrollment());
-  }, [mlReady]);
+    setEnrolled(await hasLocalEnrollment());
+  }, []);
 
   useEffect(() => {
     refreshEnrollment();
@@ -90,7 +89,7 @@ export function useFaceAuth() {
         return false;
       }
     },
-    [ml, ready, refreshEnrollment],
+    [ml, ready, refreshEnrollment, mlReady],
   );
 
   const authenticate = useCallback(
@@ -118,7 +117,7 @@ export function useFaceAuth() {
         return undefined;
       }
     },
-    [ml, queue, ready],
+    [ml, queue, ready, mlReady],
   );
 
   return {

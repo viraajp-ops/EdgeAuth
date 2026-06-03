@@ -48,6 +48,9 @@
       ],
       "expo-secure-store"
     ],
+    "experiments": {
+      "newArch": true
+    },
     "extra": {
       "faceguard": {
         "targetModelBundleMb": 20,

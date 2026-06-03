@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { FaceDetection, FrameSample } from '../../types/faceguard';
 import { decodeBestBlazeFace } from './blazeFaceDecode';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import {
   averageLuminance,
   cropAndNormalizeMobileFaceNet,
@@ -34,9 +35,6 @@ export class TfliteModelAdapter implements ModelAdapter {
 
   async initialize(): Promise<void> {
     try {
-      if (Platform.OS === 'android') {
-        throw new Error('TFLite is disabled on Android.');
-      }
       // Load lazily so Nitro failures fall back cleanly instead of crashing on import.
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const fastTflite = require('react-native-fast-tflite');
@@ -132,16 +130,37 @@ export class TfliteModelAdapter implements ModelAdapter {
       return cached;
     }
 
-    const rgba = await loadRgbaFromPhotoPath(photoPath);
+    const uri = photoPath.startsWith('file://') ? photoPath : `file://${photoPath}`;
+    
+    // Natively shrink the image to max width 256 before reading it into JS for blazing fast decoding
+    const compressed = await manipulateAsync(
+      uri,
+      [{ resize: { width: 256 } }],
+      { compress: 0.8, format: SaveFormat.JPEG }
+    );
+    
+    const rgba = await loadRgbaFromPhotoPath(compressed.uri);
     const letterbox = letterboxToBlazeFace(rgba);
     let detection: ReturnType<typeof decodeBestBlazeFace>;
 
     if (this.blazeFace) {
       const outputs = await this.blazeFace.run([letterbox.tensor as any]);
-      const rawBoxes = outputs[0];
-      const rawScores = outputs[1];
+      let rawBoxes = outputs[0];
+      let rawScores = outputs[1];
+      
+      // Auto-detect if scores and boxes are swapped based on byteLength
+      // Boxes: 896 * 16 * 4 = 57344 bytes. Scores: 896 * 1 * 4 = 3584 bytes.
+      if (rawBoxes && rawScores && (rawBoxes as any).byteLength < (rawScores as any).byteLength) {
+        rawBoxes = outputs[1];
+        rawScores = outputs[0];
+      }
+      
       detection =
         rawBoxes && rawScores ? decodeBestBlazeFace(rawBoxes, rawScores) : undefined;
+        
+      if (!detection) {
+        throw new Error(`Boxes: ${(rawBoxes as any)?.byteLength} bytes, Scores: ${(rawScores as any)?.byteLength} bytes`);
+      }
     } else {
       detection = undefined;
     }
@@ -171,11 +190,20 @@ export class TfliteModelAdapter implements ModelAdapter {
   }
 }
 
-function typedArrayToNumbers(values: ArrayBuffer | ArrayLike<number>): number[] {
+function typedArrayToNumbers(values: ArrayBuffer | ArrayLike<number> | Uint8Array): number[] {
   if (values instanceof ArrayBuffer) {
     const floats = new Float32Array(values);
     return Array.from(floats, value => Number(value));
   }
+  
+  if ((values as any).buffer instanceof ArrayBuffer) {
+    // fast-tflite v1 returns raw memory as Uint8Array
+    const buffer = (values as any).buffer;
+    const offset = (values as any).byteOffset || 0;
+    const length = (values as any).byteLength || 0;
+    const floats = new Float32Array(buffer, offset, length / 4);
+    return Array.from(floats, value => Number(value));
+  }
 
-  return Array.from(values, value => Number(value));
+  return Array.from(values as ArrayLike<number>, value => Number(value));
 }

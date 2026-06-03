@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import jpeg from 'jpeg-js';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { FrameSample } from '../../types/faceguard';
 
 export async function buildFrameSampleFromPhoto(
@@ -7,13 +8,22 @@ export async function buildFrameSampleFromPhoto(
   targetSize = 128
 ): Promise<FrameSample> {
   const uri = photoPath.startsWith('file://') ? photoPath : `file://${photoPath}`;
-  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+  
+  // Natively shrink the image to 256x256 max before base64 stringification
+  const compressed = await manipulateAsync(
+    uri,
+    [{ resize: { width: 256 } }],
+    { compress: 0.8, format: SaveFormat.JPEG }
+  );
+  
+  const base64 = await FileSystem.readAsStringAsync(compressed.uri, { encoding: FileSystem.EncodingType.Base64 });
   const decoded = jpeg.decode(base64ToUint8Array(base64), { useTArray: true });
   const resized = resizeRgb(decoded.data, decoded.width, decoded.height, targetSize, targetSize);
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     timestamp: Date.now(),
+    photoPath,
     luminance: computeLuminance(resized),
     textureScore: computeTextureScore(resized),
     rgbData: resized

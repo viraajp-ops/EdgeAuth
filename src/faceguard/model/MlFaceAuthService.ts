@@ -33,12 +33,23 @@ export class MlFaceAuthService {
     }
 
     const frame = await buildFrameSampleFromPhoto(photoPath, 112);
-    const face = await this.adapter.detectFace(frame);
+    let face;
+    try {
+      face = await this.adapter.detectFace(frame);
+    } catch (e: any) {
+      throw failure('NO_FACE', `Model error: ${e.message}`);
+    }
+    
     if (!face) {
       throw failure('NO_FACE', 'No face detected in the captured image. Try again with better framing.');
     }
 
-    const embedding = await this.adapter.createEmbedding(frame, face);
+    let embedding;
+    try {
+      embedding = await this.adapter.createEmbedding(frame, face);
+    } catch (e: any) {
+      throw failure('NO_FACE', `Embedding error: ${e.message}`);
+    }
     const descriptor = await createPhotoDescriptor(photoPath);
     await saveLocalEnrollment({
       userId: 'DL-FIELD-LOCAL',
