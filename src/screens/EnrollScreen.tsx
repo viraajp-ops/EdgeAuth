@@ -9,18 +9,27 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 type Props = NativeStackScreenProps<RootStackParamList, 'Enroll'>;
 
 export function EnrollScreen({ navigation }: Props) {
-  // True only while this screen is the active foreground screen
   const [isFocused, setIsFocused] = useState(false);
-  // Delayed-active: stays false for 900ms after focus to let the outgoing
-  // screen fully release camera hardware before we try to seize it.
   const [cameraActive, setCameraActive] = useState(false);
+  // Incrementing this key forces React to fully unmount+remount the Camera
+  // native view, which is required on Android (vision-camera v4) to recover
+  // from a zombie session that opened but never fired onInitialized.
+  const [cameraKey, setCameraKey] = useState(0);
+
+  const bumpCamera = (delayMs = 0) => {
+    setCameraActive(false);
+    setCameraInitialized(false);
+    setCameraError(undefined);
+    setTimeout(() => {
+      setCameraKey(k => k + 1);
+      setCameraActive(true);
+    }, delayMs);
+  };
 
   useFocusEffect(
     React.useCallback(() => {
       setIsFocused(true);
-      setCameraInitialized(false);
-      setCameraError(undefined);
-      const timeout = setTimeout(() => setCameraActive(true), 900);
+      const timeout = setTimeout(() => bumpCamera(), 900);
       return () => {
         setIsFocused(false);
         setCameraActive(false);
@@ -56,28 +65,18 @@ export function EnrollScreen({ navigation }: Props) {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // When permission is granted (via system dialog while on screen),
-  // re-trigger camera activation with a small delay for the OS to settle.
+  // Permission just granted while screen is focused — do a fresh camera mount
   useEffect(() => {
-    if (!hasPermission || !isFocused) return;
-    setCameraInitialized(false);
-    setCameraError(undefined);
-    setCameraActive(false);
-    const timeout = setTimeout(() => setCameraActive(true), 300);
-    return () => clearTimeout(timeout);
+    if (hasPermission && isFocused) {
+      bumpCamera(300);
+    }
   }, [hasPermission]); // eslint-disable-line react-hooks/exhaustive-deps
-  // NOTE: intentionally omit isFocused — we only want this to fire when
-  // hasPermission changes, not on every focus/blur cycle.
 
-  // Handle app coming back to foreground (e.g. user went to Settings to grant permission)
+  // App returned from background (e.g. Settings) — fresh mount
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
+    const sub = AppState.addEventListener('change', state => {
       if (state === 'active' && isFocused && hasPermission) {
-        setCameraInitialized(false);
-        setCameraError(undefined);
-        setCameraActive(false);
-        const timeout = setTimeout(() => setCameraActive(true), 500);
-        return () => clearTimeout(timeout);
+        bumpCamera(500);
       }
     });
     return () => sub.remove();
@@ -148,6 +147,7 @@ export function EnrollScreen({ navigation }: Props) {
         <View style={styles.cameraWrapper}>
           {showCamera ? (
             <Camera
+              key={cameraKey}
               ref={cameraRef}
               style={StyleSheet.absoluteFill}
               device={device}
@@ -161,6 +161,7 @@ export function EnrollScreen({ navigation }: Props) {
                 setCameraInitialized(true);
               }}
               onError={error => {
+                console.error('[EnrollScreen] Camera error:', error.code, error.message);
                 setCameraError(error.message);
                 setCameraInitialized(false);
               }}
