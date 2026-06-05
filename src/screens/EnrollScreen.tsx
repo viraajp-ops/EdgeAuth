@@ -233,6 +233,14 @@ export function EnrollScreen({ navigation }: Props) {
             <Text style={styles.secondaryButtonText}>Go to Authentication</Text>
           </Pressable>
 
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.secondaryButton, pressed && { opacity: 0.6 }, { marginTop: 12 }]}
+            onPress={() => bumpCamera(300)}
+          >
+            <Text style={styles.secondaryButtonText}>Refresh Camera</Text>
+          </Pressable>
+
           <Text style={[styles.footerText, { marginTop: 16, marginBottom: 0 }]}>Biometric data never leaves your device.</Text>
         </View>
       </View>
