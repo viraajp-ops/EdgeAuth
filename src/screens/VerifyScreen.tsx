@@ -13,7 +13,9 @@ export function VerifyScreen({ navigation }: Props) {
   const { authenticate, enrolled, ready, status, lastError, lastResult } = useFaceAuth();
   const cameraRef = useRef<Camera>(null);
   const requestedPermissionRef = useRef(false);
-  const device = useCameraDevice('front');
+  const frontDevice = useCameraDevice('front');
+  const backDevice = useCameraDevice('back');
+  const device = frontDevice ?? backDevice;
   const format = React.useMemo(() => {
     if (!device) return undefined;
     const sorted = [...device.formats].sort((a, b) => (a.photoWidth * a.photoHeight) - (b.photoWidth * b.photoHeight));
@@ -24,6 +26,13 @@ export function VerifyScreen({ navigation }: Props) {
   const [cameraError, setCameraError] = useState<string | undefined>();
   const [requestingPermission, setRequestingPermission] = useState(false);
   const [cameraInitialized, setCameraInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!hasPermission && !requestedPermissionRef.current) {
+      requestedPermissionRef.current = true;
+      requestPermission().catch(console.warn);
+    }
+  }, [hasPermission, requestPermission]);
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(0.4)).current;

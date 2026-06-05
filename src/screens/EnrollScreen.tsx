@@ -13,17 +13,26 @@ export function EnrollScreen({ navigation }: Props) {
   const { enroll, enrolled, ready, status, lastError } = useFaceAuth();
   const cameraRef = useRef<Camera>(null);
   const requestedPermissionRef = useRef(false);
-  const device = useCameraDevice('front');
+  const frontDevice = useCameraDevice('front');
+  const backDevice = useCameraDevice('back');
+  const device = frontDevice ?? backDevice;
   const format = React.useMemo(() => {
     if (!device) return undefined;
     const sorted = [...device.formats].sort((a, b) => (a.photoWidth * a.photoHeight) - (b.photoWidth * b.photoHeight));
     return sorted.find(f => f.photoWidth >= 480) ?? sorted[0];
   }, [device]);
   const { hasPermission, requestPermission } = useCameraPermission();
-  const [challengeText, setChallengeText] = useState('Enroll your identity');
+  const [challengeText, setChallengeText] = useState('Position face to enroll');
   const [cameraError, setCameraError] = useState<string | undefined>();
   const [requestingPermission, setRequestingPermission] = useState(false);
   const [cameraInitialized, setCameraInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!hasPermission && !requestedPermissionRef.current) {
+      requestedPermissionRef.current = true;
+      requestPermission().catch(console.warn);
+    }
+  }, [hasPermission, requestPermission]);
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(0.4)).current;

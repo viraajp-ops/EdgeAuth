@@ -8,12 +8,7 @@ import { AppErrorBoundary } from './src/components/AppErrorBoundary';
 import { FaceGuardProvider } from './src/faceguard/FaceGuardProvider';
 
 export default function App() {
-  useEffect(() => {
-    // Only request permission if it hasn't been granted yet
-    if (Camera.getCameraPermissionStatus() !== 'granted') {
-      Camera.requestCameraPermission().catch(console.warn);
-    }
-  }, []);
+  // Permission is handled at the screen level to sync with React state.
 
   return (
     <AppErrorBoundary>
