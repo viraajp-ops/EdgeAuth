@@ -13,11 +13,14 @@ export function VerifyScreen({ navigation }: Props) {
 
   useFocusEffect(
     React.useCallback(() => {
+      setCameraError(undefined);
+      setCameraInitialized(false);
       // Wait 300ms for screen transitions to finish before seizing camera hardware
       const timeout = setTimeout(() => setIsCameraActive(true), 300);
       return () => {
         clearTimeout(timeout);
         setIsCameraActive(false);
+        setCameraInitialized(false);
       };
     }, [])
   );
@@ -85,6 +88,7 @@ export function VerifyScreen({ navigation }: Props) {
   }, [lastResult, navigation]);
 
   const busy = status === 'detecting-face' || status === 'checking-liveness' || status === 'matching-face';
+  const activeDevice = device && hasPermission && isCameraActive ? device : undefined;
   const cameraReady = Boolean(device && hasPermission && !cameraError && cameraInitialized && cameraRef.current);
 
   const capturePhoto = async (retries = 5, delayMs = 300): Promise<string> => {
@@ -138,11 +142,11 @@ export function VerifyScreen({ navigation }: Props) {
       {/* Centered Camera Viewport */}
       <View style={styles.cameraSection}>
         <View style={styles.cameraWrapper}>
-          {device && hasPermission ? (
+          {activeDevice ? (
             <Camera
               ref={cameraRef}
               style={StyleSheet.absoluteFill}
-              device={device}
+              device={activeDevice}
               format={format}
               isActive={isCameraActive}
               photo
