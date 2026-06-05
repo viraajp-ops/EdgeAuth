@@ -139,7 +139,7 @@ export function VerifyScreen({ navigation }: Props) {
       {/* Centered Camera Viewport */}
       <View style={styles.cameraSection}>
         <View style={styles.cameraWrapper}>
-          {device && hasPermission && isCameraActive ? (
+          {enrolled === true && device && hasPermission && isCameraActive ? (
             <Camera
               ref={cameraRef}
               style={StyleSheet.absoluteFill}
