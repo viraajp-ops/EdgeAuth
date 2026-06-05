@@ -26,23 +26,22 @@ export function EnrollScreen({ navigation }: Props) {
     }, delayMs);
   };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      setIsFocused(true);
-      const timeout = setTimeout(() => bumpCamera(), 1500);
-      return () => {
-        setIsFocused(false);
-        setCameraActive(false);
-        setCameraInitialized(false);
-        clearTimeout(timeout);
-      };
-    }, [])
-  );
+  useEffect(() => {
+    setIsFocused(true);
+    const timeout = setTimeout(() => bumpCamera(), 1500);
+    return () => {
+      setIsFocused(false);
+      setCameraActive(false);
+      setCameraInitialized(false);
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const { enroll, enrolled, ready, status, lastError } = useFaceAuth();
   const cameraRef = useRef<Camera>(null);
-  const frontDevice = useCameraDevice('front');
-  const backDevice = useCameraDevice('back');
+  const devices = Camera.getAvailableCameraDevices();
+  const frontDevice = devices.find(d => d.position === 'front');
+  const backDevice = devices.find(d => d.position === 'back');
   const device = frontDevice ?? backDevice;
   const format = React.useMemo(() => {
     if (!device) return undefined;
