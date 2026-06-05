@@ -237,13 +237,7 @@ export function VerifyScreen({ navigation }: Props) {
             <Text style={styles.secondaryButtonText}>Re-enroll Identity</Text>
           </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.secondaryButton, pressed && { opacity: 0.6 }, { marginTop: 12 }]}
-            onPress={() => bumpCamera(300)}
-          >
-            <Text style={styles.secondaryButtonText}>Refresh Camera</Text>
-          </Pressable>
+
 
           <Text style={[styles.footerText, { marginTop: 16, marginBottom: 0 }]}>Using biometric data for secure login.</Text>
         </View>
