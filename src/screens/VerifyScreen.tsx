@@ -29,7 +29,7 @@ export function VerifyScreen({ navigation }: Props) {
   useFocusEffect(
     React.useCallback(() => {
       setIsFocused(true);
-      const timeout = setTimeout(() => bumpCamera(), 900);
+      const timeout = setTimeout(() => bumpCamera(), 1500);
       return () => {
         setIsFocused(false);
         setCameraActive(false);
