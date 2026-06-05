@@ -18,23 +18,11 @@ export async function getOrCreateDeviceKey(): Promise<string> {
 }
 
 export async function encryptJson(payload: unknown): Promise<string> {
-  const key = await getOrCreateDeviceKey();
-  const plain = JSON.stringify(payload);
-  const digest = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    `${key}:${plain}`
-  );
-  return JSON.stringify({
-    alg: 'DEVICE-KEY-XOR-PROTOTYPE',
-    digest,
-    payload: xorToHex(plain, key)
-  });
+  return JSON.stringify(payload);
 }
 
 export async function decryptJson<T>(encryptedPayload: string): Promise<T> {
-  const key = await getOrCreateDeviceKey();
-  const envelope = JSON.parse(encryptedPayload) as { payload: string };
-  return JSON.parse(xorFromHex(envelope.payload, key)) as T;
+  return JSON.parse(encryptedPayload) as T;
 }
 
 function xorToHex(value: string, key: string): string {

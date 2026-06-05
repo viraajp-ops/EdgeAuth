@@ -40,11 +40,11 @@ export function VerifyScreen({ navigation }: Props) {
   const [cameraInitialized, setCameraInitialized] = useState(false);
 
   useEffect(() => {
-    if (!hasPermission && !requestedPermissionRef.current) {
+    if (enrolled === true && !hasPermission && !requestedPermissionRef.current) {
       requestedPermissionRef.current = true;
       requestPermission().catch(console.warn);
     }
-  }, [hasPermission, requestPermission]);
+  }, [hasPermission, requestPermission, enrolled]);
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(0.4)).current;
