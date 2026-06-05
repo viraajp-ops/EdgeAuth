@@ -14,8 +14,8 @@ export function VerifyScreen({ navigation }: Props) {
   useFocusEffect(
     React.useCallback(() => {
       setCameraError(undefined);
-      // Wait 300ms for screen transitions to finish before seizing camera hardware
-      const timeout = setTimeout(() => setIsCameraActive(true), 300);
+      // Wait 750ms for screen transitions to fully finish before seizing camera hardware
+      const timeout = setTimeout(() => setIsCameraActive(true), 750);
       return () => {
         clearTimeout(timeout);
         setIsCameraActive(false);
