@@ -40,11 +40,11 @@ export function VerifyScreen({ navigation }: Props) {
   const [cameraInitialized, setCameraInitialized] = useState(false);
 
   useEffect(() => {
-    if (enrolled === true && !hasPermission && !requestedPermissionRef.current) {
+    if (!hasPermission && !requestedPermissionRef.current) {
       requestedPermissionRef.current = true;
       requestPermission().catch(console.warn);
     }
-  }, [hasPermission, requestPermission, enrolled]);
+  }, [hasPermission, requestPermission]);
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(0.4)).current;
@@ -71,11 +71,6 @@ export function VerifyScreen({ navigation }: Props) {
     ).start();
   }, [pulseAnim]);
 
-  useEffect(() => {
-    if (ready && enrolled === false) {
-      navigation.replace('Enroll');
-    }
-  }, [ready, enrolled, navigation]);
 
   useEffect(() => {
     if (lastResult) {
@@ -139,7 +134,7 @@ export function VerifyScreen({ navigation }: Props) {
       {/* Centered Camera Viewport */}
       <View style={styles.cameraSection}>
         <View style={styles.cameraWrapper}>
-          {enrolled === true && device && hasPermission && isCameraActive ? (
+          {device && hasPermission && isCameraActive ? (
             <Camera
               ref={cameraRef}
               style={StyleSheet.absoluteFill}
