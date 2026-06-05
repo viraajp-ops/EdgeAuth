@@ -88,7 +88,6 @@ export function VerifyScreen({ navigation }: Props) {
   }, [lastResult, navigation]);
 
   const busy = status === 'detecting-face' || status === 'checking-liveness' || status === 'matching-face';
-  const activeDevice = device && hasPermission && isCameraActive ? device : undefined;
   const cameraReady = Boolean(device && hasPermission && !cameraError && cameraInitialized && cameraRef.current);
 
   const capturePhoto = async (retries = 5, delayMs = 300): Promise<string> => {
@@ -142,11 +141,11 @@ export function VerifyScreen({ navigation }: Props) {
       {/* Centered Camera Viewport */}
       <View style={styles.cameraSection}>
         <View style={styles.cameraWrapper}>
-          {activeDevice ? (
+          {device && hasPermission ? (
             <Camera
               ref={cameraRef}
               style={StyleSheet.absoluteFill}
-              device={activeDevice}
+              device={device}
               format={format}
               isActive={isCameraActive}
               photo
