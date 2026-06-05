@@ -10,15 +10,18 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Verify'>;
 
 export function VerifyScreen({ navigation }: Props) {
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const isFocusedRef = useRef(false);
 
   useFocusEffect(
     React.useCallback(() => {
+      isFocusedRef.current = true;
       setCameraError(undefined);
       setCameraInitialized(false);
       // Wait for screen transition to finish before seizing camera hardware.
       // 900ms avoids the race where the outgoing screen still holds the hardware.
       const timeout = setTimeout(() => setIsCameraActive(true), 900);
       return () => {
+        isFocusedRef.current = false;
         clearTimeout(timeout);
         setCameraInitialized(false);
         setIsCameraActive(false);
@@ -46,6 +49,13 @@ export function VerifyScreen({ navigation }: Props) {
     if (!hasPermission && !requestedPermissionRef.current) {
       requestedPermissionRef.current = true;
       requestPermission().catch(console.warn);
+    }
+    // When permission is granted while the screen is already focused
+    // (e.g. user just tapped Allow on the system dialog), re-activate the camera.
+    if (hasPermission && isFocusedRef.current) {
+      setCameraError(undefined);
+      setCameraInitialized(false);
+      setIsCameraActive(true);
     }
   }, [hasPermission, requestPermission]);
 
