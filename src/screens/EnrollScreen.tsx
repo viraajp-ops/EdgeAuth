@@ -14,13 +14,11 @@ export function EnrollScreen({ navigation }: Props) {
   useFocusEffect(
     React.useCallback(() => {
       setCameraError(undefined);
-      setCameraInitialized(false);
       // Wait 300ms for screen transitions to finish before seizing camera hardware
       const timeout = setTimeout(() => setIsCameraActive(true), 300);
       return () => {
         clearTimeout(timeout);
         setIsCameraActive(false);
-        setCameraInitialized(false);
       };
     }, [])
   );
@@ -134,13 +132,13 @@ export function EnrollScreen({ navigation }: Props) {
       {/* Centered Camera Viewport */}
       <View style={styles.cameraSection}>
         <View style={styles.cameraWrapper}>
-          {device && hasPermission ? (
+          {device && hasPermission && isCameraActive ? (
             <Camera
               ref={cameraRef}
               style={StyleSheet.absoluteFill}
               device={device}
               format={format}
-              isActive={isCameraActive}
+              isActive={true}
               photo
               video={false}
               audio={false}
