@@ -68,7 +68,7 @@ export function VerifyScreen({ navigation }: Props) {
   // Permission just granted while screen is focused — do a fresh camera mount
   useEffect(() => {
     if (hasPermission && isFocused) {
-      bumpCamera(1500);
+      bumpCamera(3000);
     }
   }, [hasPermission]); // eslint-disable-line react-hooks/exhaustive-deps
 
