@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useIsFocused } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import { useFaceAuth } from '../hooks/useFaceAuth';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -9,7 +9,18 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 type Props = NativeStackScreenProps<RootStackParamList, 'Verify'>;
 
 export function VerifyScreen({ navigation }: Props) {
-  const isFocused = useIsFocused();
+  const [isCameraActive, setIsCameraActive] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Wait 300ms for screen transitions to finish before seizing camera hardware
+      const timeout = setTimeout(() => setIsCameraActive(true), 300);
+      return () => {
+        clearTimeout(timeout);
+        setIsCameraActive(false);
+      };
+    }, [])
+  );
   const { authenticate, enrolled, ready, status, lastError, lastResult } = useFaceAuth();
   const cameraRef = useRef<Camera>(null);
   const requestedPermissionRef = useRef(false);
@@ -133,7 +144,7 @@ export function VerifyScreen({ navigation }: Props) {
               style={StyleSheet.absoluteFill}
               device={device}
               format={format}
-              isActive={isFocused}
+              isActive={isCameraActive}
               photo
               video={false}
               audio={false}
