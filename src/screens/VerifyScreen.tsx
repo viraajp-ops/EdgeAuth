@@ -14,10 +14,13 @@ export function VerifyScreen({ navigation }: Props) {
   useFocusEffect(
     React.useCallback(() => {
       setCameraError(undefined);
-      // Wait 750ms for screen transitions to fully finish before seizing camera hardware
-      const timeout = setTimeout(() => setIsCameraActive(true), 750);
+      setCameraInitialized(false);
+      // Wait for screen transition to finish before seizing camera hardware.
+      // 900ms avoids the race where the outgoing screen still holds the hardware.
+      const timeout = setTimeout(() => setIsCameraActive(true), 900);
       return () => {
         clearTimeout(timeout);
+        setCameraInitialized(false);
         setIsCameraActive(false);
       };
     }, [])
@@ -48,10 +51,6 @@ export function VerifyScreen({ navigation }: Props) {
 
   // Animation values
   const pulseAnim = useRef(new Animated.Value(0.4)).current;
-
-  useEffect(() => {
-    setCameraInitialized(false);
-  }, [device]);
 
   useEffect(() => {
     // Soft pulsing animation for the camera border
