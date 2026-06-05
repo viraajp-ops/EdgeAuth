@@ -1,4 +1,4 @@
-# Faceguard Technical Documentation
+# EdgeAuth Technical Documentation
 ### Prepared for Hackathon 7.0 Submission
 
 **Title:** Datalake 3.0 Offline Biometric Integration

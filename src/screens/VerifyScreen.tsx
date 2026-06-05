@@ -112,7 +112,7 @@ export function VerifyScreen({ navigation }: Props) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>SecureAccess</Text>
+        <Text style={styles.headerTitle}>EdgeAuth</Text>
       </View>
 
       {/* Centered Camera Viewport */}
